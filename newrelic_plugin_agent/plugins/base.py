@@ -10,6 +10,7 @@ import socket
 import tempfile
 import time
 import urlparse
+import json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -232,7 +233,6 @@ class Plugin(object):
 
         """
         return self.component_data()
-
 
 class SocketStatsPlugin(Plugin):
     """Connect to a socket and collect stats data"""
@@ -465,3 +465,41 @@ class JSONStatsPlugin(HTTPStatsPlugin):
         if data:
             self.add_datapoints(data)
         self.finish()
+
+class StatsCommandPlugin(Plugin):
+  def command(self):
+    raise NotImplementedError
+    
+  def fetch_data(self):
+    try:
+      status = self.command()
+      if status.code != 0:
+        raise Exception, status.error
+    except Exception as error:
+      LOGGER.error('Command Failed: %r', error)
+    
+    return status.output
+
+  def poll(self):
+    """Poll the command for stats data"""
+    self.initialize()
+    data = self.fetch_data()
+    if data:
+      self.add_datapoints(data)
+    self.finish()
+
+class JSONStatsCommandPlugin(StatsCommandPlugin):
+  def command(self):
+    raise NotImplementedError
+    
+  def fetch_data(self):
+    try:
+      output = super(JSONStatsCommandPlugin, self).fetch_data()
+    except Exception as error:
+      LOGGER.error('Command Failed: %r', error)
+      
+    try:
+      return json.loads(output) if output else {}
+    except Exception as error:
+        LOGGER.error('JSON decoding error: %r', error)
+    return {}

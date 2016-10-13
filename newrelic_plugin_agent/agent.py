@@ -25,8 +25,8 @@ class NewRelicPluginAgent(helper.Controller):
     every minute and reports the state to NewRelic.
 
     """
-    IGNORE_KEYS = ['license_key', 'proxy', 'endpoint',
-                   'poll_interval', 'wake_interval']
+    IGNORE_KEYS = [
+      'license_key', 'proxy', 'endpoint', 'poll_interval', 'wake_interval']
     MAX_METRICS_PER_REQUEST = 10000
     PLATFORM_URL = 'https://platform-api.newrelic.com/platform/v1/metrics'
     WAKE_INTERVAL = 60
@@ -103,8 +103,7 @@ class NewRelicPluginAgent(helper.Controller):
                                       kwargs={'config': instance,
                                               'name': plugin_name,
                                               'plugin': plugin,
-                                              'poll_interval':
-                                                  int(self._wake_interval)})
+                                              'poll_interval': int(self._wake_interval)})
             thread.run()
             self.threads.append(thread)
 
@@ -126,8 +125,7 @@ class NewRelicPluginAgent(helper.Controller):
         duration = time.time() - start_time
         self.next_wake_interval = self._wake_interval - duration
         if self.next_wake_interval < 1:
-            LOGGER.warning('Poll interval took greater than %i seconds',
-                           duration)
+            LOGGER.warning('Poll interval took greater than %i seconds', duration)
             self.next_wake_interval = int(self._wake_interval)
         LOGGER.info('Stats processed in %.2f seconds, next wake in %i seconds',
                     duration, self.next_wake_interval)
@@ -226,11 +224,8 @@ class NewRelicPluginAgent(helper.Controller):
                                      proxies=self.proxies,
                                      data=json.dumps(body, ensure_ascii=False),
                                      timeout=self.config.get('newrelic_api_timeout', 10),
-                                     verify=self.config.get('verify_ssl_cert',
-                                                            True))
-            LOGGER.debug('Response: %s: %r',
-                         response.status_code,
-                         response.content.strip())
+                                     verify=self.config.get('verify_ssl_cert', True))
+            LOGGER.debug('Response: %s: %r', response.status_code, response.content.strip())
         except requests.ConnectionError as error:
             LOGGER.error('Error reporting stats: %s', error)
         except requests.Timeout as error:

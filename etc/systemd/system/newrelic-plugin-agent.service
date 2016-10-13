@@ -2,19 +2,22 @@
 Description=newrelic-plugin-agent
 
 [Service]
-Type=forking
-PrivateTmp=yes
 User=newrelic
 Group=newrelic
+
+PrivateTmp=yes
 PermissionsStartOnly=true
+
+EnvironmentFile=-/etc/sysconfig/newrelic-plugin-agent
+Environment=CONFIG_FILE=/etc/newrelic/plugin-agent.yml
+
+Type=forking
 PIDFile=/var/run/newrelic/newrelic-plugin-agent.pid
-ExecStartPre=/bin/mkdir -p /var/run/newrelic
-ExecStartPre=/bin/rm -f /var/run/newrelic/newrelic-plugin-agent.pid
-ExecStartPre=/bin/chown -R newrelic:newrelic /var/run/newrelic
-ExecStart=/usr/bin/newrelic-plugin-agent -c /etc/newrelic/newrelic-plugin-agent.cfg
+ExecStart=/usr/bin/newrelic-plugin-agent -c $CONFIG_FILE
 ExecStop=/bin/kill -INT $MAINPID
 Restart=on-abort
 
+RuntimeDirectory=newrelic
+
 [Install]
 WantedBy=multi-user.target
-
