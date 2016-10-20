@@ -4,6 +4,7 @@ Base Plugin Classes
 """
 import csv
 import logging
+import sys
 from os import path
 import requests
 import socket
@@ -21,7 +22,10 @@ class Plugin(object):
     MAX_VAL = 2147483647
 
     def __init__(self, config, poll_interval, last_interval_values=None):
-        self.config = config
+        self._plugin_name   = sys.modules[self.__class__.__module__].__name__.split('.')[-1]
+        self._agent_config  = config
+        self._plugin_config = self.agent_config.get(self.plugin_name)
+
         LOGGER.debug('%s config: %r', self.__class__.__name__, self.config)
         self.poll_interval = poll_interval
         self.poll_start_time = 0
@@ -181,7 +185,7 @@ class Plugin(object):
         """
         if not value:
             value = 0
-            
+
         if isinstance(value, basestring):
             value = 0
 
@@ -196,13 +200,26 @@ class Plugin(object):
                 'sum_of_squares': sum_of_squares}
 
     @property
+    def plugin_name(self):
+        return self._plugin_name
+
+    @property
+    def config(self):
+        return self._plugin_config
+
+    @property
+    def agent_config(self):
+        return self._agent_config
+
+    @property
     def name(self):
         """Return the name of the component
 
         :rtype: str
 
         """
-        return self.config.get('name', socket.gethostname().split('.')[0])
+        return self.agent_config.get('display_name',
+                                     self.config.get('name', socket.gethostname()))
 
     def poll(self):
         """Poll the server returning the results in the expected component
@@ -469,7 +486,7 @@ class JSONStatsPlugin(HTTPStatsPlugin):
 class StatsCommandPlugin(Plugin):
   def command(self):
     raise NotImplementedError
-    
+
   def fetch_data(self):
     try:
       status = self.command()
@@ -477,7 +494,7 @@ class StatsCommandPlugin(Plugin):
         raise Exception, status.error
     except Exception as error:
       LOGGER.error('Command Failed: %r', error)
-    
+
     return status.output
 
   def poll(self):
@@ -491,13 +508,13 @@ class StatsCommandPlugin(Plugin):
 class JSONStatsCommandPlugin(StatsCommandPlugin):
   def command(self):
     raise NotImplementedError
-    
+
   def fetch_data(self):
     try:
       output = super(JSONStatsCommandPlugin, self).fetch_data()
     except Exception as error:
       LOGGER.error('Command Failed: %r', error)
-      
+
     try:
       return json.loads(output) if output else {}
     except Exception as error:

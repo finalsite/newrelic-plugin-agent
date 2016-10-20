@@ -26,7 +26,8 @@ class NewRelicPluginAgent(helper.Controller):
 
     """
     IGNORE_KEYS = [
-      'license_key', 'proxy', 'endpoint', 'poll_interval', 'wake_interval']
+      'license_key', 'proxy', 'endpoint', 'poll_interval', 'wake_interval', 'display_name' ]
+
     MAX_METRICS_PER_REQUEST = 10000
     PLATFORM_URL = 'https://platform-api.newrelic.com/platform/v1/metrics'
     WAKE_INTERVAL = 60
@@ -74,9 +75,11 @@ class NewRelicPluginAgent(helper.Controller):
         :rtype: dict
 
         """
-        return {'host': socket.gethostname(),
-                'pid': os.getpid(),
-                'version': __version__}
+        return {
+          'host': socket.gethostname(),
+          'pid': os.getpid(),
+          'version': __version__
+        }
 
     @property
     def license_key(self):
@@ -271,8 +274,7 @@ class NewRelicPluginAgent(helper.Controller):
                 LOGGER.error('Enabled plugin %s not available', plugin)
                 continue
 
-            self.poll_plugin(plugin, plugin_class,
-                             self.config.application.get(plugin))
+            self.poll_plugin(plugin, plugin_class, self.config.application)
 
     @property
     def threads_running(self):
@@ -298,8 +300,7 @@ class NewRelicPluginAgent(helper.Controller):
 
         """
         instance_name = "%s:%s" % (name, config.get('name', 'unnamed'))
-        obj = plugin(config, poll_interval,
-                     self.derive_last_interval.get(instance_name))
+        obj = plugin(config, poll_interval, self.derive_last_interval.get(instance_name))
         obj.poll()
         self.publish_queue.put((instance_name, obj.values(),
                                 obj.derive_last_interval))
