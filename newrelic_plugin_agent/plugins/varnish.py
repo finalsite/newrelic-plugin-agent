@@ -76,7 +76,7 @@ UNIT_METRICS = {
 }
 
 METRIC_UNITS = defaultdict(lambda: 'unknown', {
-  member: unit for (unit, members) in UNITS.items() for member in members 
+  member: unit for (unit, members) in UNIT_METRICS.items() for member in members 
 })
 
 def unit(metric_name):
@@ -117,12 +117,12 @@ class Varnish(base.JSONStatsCommandPlugin):
         :param dict stats: The request stats
 
         """
-        total = self.get_cache_metric_derived_value('cache_hit', stats) + \
-                self.get_cache_metric_derived_value('cache_miss', stats) + \
-                self.get_cache_metric_derived_value('cache_hitpass', stats)
+        total = self.get_derived_value('Cache Utilization', 'cache_hit', stats) + \
+                self.get_derived_value('Cache Utilization', 'cache_miss', stats) + \
+                self.get_derived_value('Cache Utilization', 'cache_hitpass', stats)
                 
         if total > 0:
-            percent = (float(self.get_cache_metric_derived_value(metric_name, stats)) / float(total)) * 100
+            percent = (float(self.get_derived_value('Cache Utilization', metric_name, stats)) / float(total)) * 100
         else:
             percent = 0
             
