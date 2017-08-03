@@ -12,6 +12,7 @@ import tempfile
 import time
 import urlparse
 import json
+from contextlib import contextmanager
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,10 @@ class Plugin(object):
     def __init__(self, config, poll_interval, last_interval_values=None):
         self._plugin_name   = sys.modules[self.__class__.__module__].__name__.split('.')[-1]
         self._agent_config  = config
-        self._plugin_config = self.agent_config.get(self.plugin_name)
+
+        config = self.agent_config.get(self.plugin_name)
+        self._plugin_configs = config if type(config) == 'list' else [config]
+        self._selected_config = 0
 
         LOGGER.debug('%s config: %r', self.__class__.__name__, self.config)
         self.poll_interval = poll_interval
@@ -204,8 +208,19 @@ class Plugin(object):
         return self._plugin_name
 
     @property
+    def configs(self):
+        # XXX: Not thread-safe
+        current_config = self._selected_config 
+        try:
+            for i in xrange(0, len(self._plugin_configs)):
+                self._selected_config = i
+                yield self._plugin_configs[self._selected_config]
+        finally:
+            self._selected_config = current_config
+
+    @property
     def config(self):
-        return self._plugin_config
+        return self._plugin_configs[self._selected_config]
 
     @property
     def agent_config(self):
