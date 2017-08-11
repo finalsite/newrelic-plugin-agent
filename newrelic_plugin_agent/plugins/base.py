@@ -27,7 +27,7 @@ class Plugin(object):
         self._agent_config  = config
 
         config = self.agent_config.get(self.plugin_name)
-        self._plugin_configs = config if type(config) == 'list' else [config]
+        self._plugin_configs = config if type(config) is list else [config]
         self._selected_config = 0
 
         LOGGER.debug('%s config: %r', self.__class__.__name__, self.config)
